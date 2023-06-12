@@ -1,0 +1,176 @@
+<%@ page pageEncoding="UTF-8" %>
+<head>
+    
+    <style>
+    body {
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #023047;
+        
+    }
+    
+    input{
+        width: 300px;
+        height: 50px;
+        border: 2px solid black;
+        border-radius: 10px;
+        border-color: #c4c0c2;
+    }
+    .card-body{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        align-content: center;
+        justify-content: center;
+        width: 100%;
+        height: 80vh;   
+        background-image: url(https://images3.motor-reserva.com.br/cdn-cgi/image/fit=scale-down,format=webp,width=1920,quality=90/curl/motor_reserva/images/configuracao_estabelecimento/cliente_3519/202212191671450675topo1.jpg);
+        background-repeat: no-repeat;
+        background-size: cover; 
+    }
+    
+    .btn{
+        background-color: #f51b7f;
+        border: none !important;
+        transition: all linear 160ms;
+        cursor: pointer;
+    }
+    .palavra-login{
+        color: #fff;
+    }
+    .login{
+        background-color: #f51b7f;
+        
+        font-size: 14px;
+        font-weight: 600;
+        border: none !important;
+        transition: all linear 160ms;
+        cursor: pointer;
+        width: 300px;
+        height: 50px;
+        border-radius: 10px;
+    }
+    
+    .login:hover {
+        transform: scale(1.05);
+        background-color: #f72585;
+    }
+    label{
+        font-size: 20px;
+    }
+    
+    .m-5{
+        display: flex;
+        flex-direction: column;
+        background-color: #fff;
+        border-radius: 7px;
+        padding: 40px;
+        box-shadow: 10px 10px 40px rgba(0, 0, 0, 0.4);
+        gap: 5px
+    }
+  </style>
+</head>
+
+<div id="session">
+    <nav v-if="data" class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.jsp"><i class="bi bi-buildings"></i>&nbsp;Vila Park</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation" >
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link" href="index.jsp">Início</a>
+                </li>
+                <li class="nav-item" v-if="data.role === 'ADMIN'">
+                  <a class="nav-link" href="history.jsp">Históricos</a>
+                </li>
+                <li class="nav-item" v-if="data.role === 'ADMIN'">
+                  <a class="nav-link" href="users.jsp">Usuários</a>
+                </li>
+              </ul>
+              <span class="navbar-text">
+                <i class="bi bi-person"></i>{{data.name}}
+                <button @click="logout()" class="btn btn-sm btn-danger" type="submit"><i class="bi bi-arrow-right-circle" title="Sair"></i></button>
+              </span>
+            </div>
+        </div>
+    </nav>
+    <div v-else>
+        <div class="card m-2">
+          <div class="card-header">
+              <h1><i class="bi bi-buildings"></i>&nbsp;Vila Park</h1>
+          </div>
+          
+          <div class="card-body" >
+            <form class="m-5">
+              <div class="mb-3">
+                  <label class="form-label"><strong>Username</strong></label><br>
+                <input v-model="loginUsername" type="text">
+              </div>
+              <div class="mb-3">
+                  <label class="form-label"><strong>Password</strong></label><br>
+                <input v-model="loginPassword" type="password">
+              </div>
+                <button @click="login()" type="submit" class="login"><strong class="palavra-login">Login</strong></button>
+            </form>
+          </div>
+        
+        </div>
+    </div>
+    <div v-if="error && error!=='No session'" class="alert alert-danger m-2" role="alert">
+        {{error}}
+    </div>
+</div>
+<script>
+    const shared = Vue.reactive({ session: null });
+    //
+    const session = Vue.createApp({
+        data() {
+            return {
+                shared: shared,
+                error: null,
+                loginUsername: null,
+                loginPassword: null,
+                data: null
+            }
+        },
+        methods: {
+            async request(url = "", method, data) {
+                try{
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {"Content-Type": "application/json", },
+                        body: JSON.stringify(data)
+                    });
+                    if(response.status==200){
+                        return response.json();
+                    }else{
+                        this.error = response.statusText;
+                    }
+                } catch(e){
+                    this.error = e;
+                    return null;
+                }
+            },
+            async loadSession() {
+                const data = await this.request("/HotelWebApp/api/session", "GET");
+                if(data) {this.data = data; this.error = null; this.shared.session = this.data;}
+            },
+            async login() {
+                const data = await this.request("/HotelWebApp/api/session", "PUT", {"login": this.loginUsername, "password": this.loginPassword});
+                if(data) {this.data = data; this.error = null; this.shared.session = this.data;}
+            },
+            async logout() {
+                const data = await this.request("/HotelWebApp/api/session", "DELETE");
+                if(data) {this.data = null; this.error = null; this.shared.session = this.data;}
+            }
+        },
+        mounted() {
+            this.loadSession();
+        }
+    });
+    session.mount('#session');
+</script>
